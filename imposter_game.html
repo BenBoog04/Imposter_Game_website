@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Imposter Party Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Roboto", sans-serif; }
+    body {
+      margin: 0;
+      background: #020617;
+      color: #f9fafb;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .app {
+      width: 100%;
+      max-width: 520px;
+      padding: 24px 18px 32px;
+    }
+    .card {
+      background: #111827;
+      border-radius: 18px;
+      padding: 22px 18px;
+      border: 1px solid #1f2937;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.5);
+    }
+    h1,h2 { margin-top: 0; text-align: center; }
+    label { font-size: 14px; color: #d1d5db; display:block; margin-bottom: 6px; }
+    input,select {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      border-radius: 10px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #f9fafb;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus,select:focus { border-color:#38bdf8; }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      color:#022c22;
+      margin-top: 8px;
+      transition: transform .06s ease, box-shadow .06s ease, filter .1s ease;
+      box-shadow: 0 14px 28px rgba(34,197,94,0.4);
+    }
+    button.secondary {
+      background: transparent;
+      color:#e5e7eb;
+      border:1px solid #4b5563;
+      box-shadow:none;
+    }
+    button:hover { filter:brightness(1.06); }
+    button:active {
+      transform:translateY(1px);
+      box-shadow:0 7px 18px rgba(34,197,94,0.4);
+    }
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#9ca3af;
+      background:rgba(15,23,42,0.95);
+      margin-bottom:10px;
+    }
+    .center { text-align:center; }
+    .big-word {
+      font-size:26px;
+      font-weight:800;
+      margin: 16px 0 6px;
+      letter-spacing:.02em;
+    }
+    .imposter { color:#f97316; }
+    .word { color:#22c55e; }
+    .small { font-size:13px; color:#9ca3af; margin-top:8px; text-align:center; }
+    .row { display:flex; gap:10px; margin-top:10px; }
+    .row button { width:100%; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div id="screen" class="card"></div>
+</div>
+
+<script>
+  // ---------- DATA SETS (GAME MODES) ----------
+  const MODES = {
+    nfl: {
+      label: "NFL Players",
+      items: [
+        "Patrick Mahomes","Josh Allen","Lamar Jackson","Jalen Hurts","Joe Burrow","Justin Herbert",
+        "C.J. Stroud","Dak Prescott","Aaron Rodgers","Tua Tagovailoa","Trevor Lawrence","Kirk Cousins",
+        "Christian McCaffrey","Derrick Henry","Saquon Barkley","Jonathan Taylor","Nick Chubb","Breece Hall",
+        "Bijan Robinson","Alvin Kamara","Tyreek Hill","Justin Jefferson","Ja'Marr Chase",
+        "Amon-Ra St. Brown","CeeDee Lamb","Stefon Diggs","A.J. Brown","Puka Nacua",
+        "George Kittle","Travis Kelce","Mark Andrews","Sam LaPorta",
+        "Micah Parsons","T.J. Watt","Myles Garrett","Sauce Gardner",
+        "Jalen Ramsey","Maxx Crosby","Nick Bosa","Chris Olave",
+        "Davante Adams","Deebo Samuel","Jaylen Waddle","James Conner",
+        "Josh Jacobs","Russell Wilson","Jared Goff","Geno Smith","Matthew Stafford"
+      ]
+    },
+    cfb: {
+      label: "College Football Teams",
+      items: [
+        "Alabama","Georgia","LSU","Ohio State","Michigan","Texas","Oklahoma","Clemson","Florida State",
+        "Notre Dame","USC","Oregon","Washington","Utah","Penn State","Florida","Tennessee","Texas A&M",
+        "Auburn","Ole Miss","Arkansas","Missouri","Kentucky","Iowa","Wisconsin","Nebraska","Michigan State",
+        "Kansas","Kansas State","Oklahoma State","TCU","Texas Tech","Baylor","Iowa State","West Virginia",
+        "Arizona","Arizona State","Colorado","Utah State","Boise State","Fresno State","San Diego State",
+        "UNLV","Wyoming","Air Force","BYU","UCF","Cincinnati","Houston",
+        "Louisville","North Carolina","Duke","NC State","Miami","Virginia Tech","Pittsburgh","Syracuse",
+        "Boston College","Georgia Tech","Wake Forest","Maryland","Rutgers","Illinois","Minnesota",
+        "Indiana","Purdue","Northwestern","Washington State","Oregon State","Stanford","California",
+        "Memphis","SMU","Tulane","UTSA","South Florida","East Carolina","Appalachian State","Coastal Carolina",
+        "James Madison","Marshall","Troy","Liberty","Toledo","Ohio","Miami (OH)","Northern Illinois",
+        "Western Michigan","Central Michigan","Eastern Michigan","Buffalo","Ball State","Akron","Kent State",
+        "San Jose State","Nevada","New Mexico","Hawaii","Colorado State","Rice","UAB","FAU","Charlotte",
+        "Old Dominion","Georgia Southern","Georgia State","Texas State","Arkansas State","UL Lafayette",
+        "UL Monroe","Middle Tennessee","Jacksonville State","New Mexico State","FIU","LA Tech","Sam Houston",
+        "UTEP","Army","Navy","UConn","UMass","South Dakota State","North Dakota State","Montana","Montana State"
+      ]
+    },
+    nba: {
+      label: "NBA Players",
+      items: [
+        "LeBron James","Stephen Curry","Kevin Durant","Nikola Jokic","Giannis Antetokounmpo",
+        "Luka Doncic","Jayson Tatum","Kawhi Leonard","Anthony Davis","Damian Lillard",
+        "Devin Booker","Joel Embiid","Shai Gilgeous-Alexander","Jimmy Butler","Ja Morant",
+        "Kyrie Irving","Paul George","James Harden","Donovan Mitchell","Trae Young",
+        "Zion Williamson","Anthony Edwards","LaMelo Ball","Klay Thompson","Draymond Green",
+        "Jamal Murray","Karl-Anthony Towns","Rudy Gobert","DeMar DeRozan","Bradley Beal"
+      ]
+    },
+    mlb: {
+      label: "MLB Players",
+      items: [
+        "Shohei Ohtani","Aaron Judge","Mookie Betts","Ronald Acuña Jr.","Juan Soto",
+        "Bryce Harper","Mike Trout","Freddie Freeman","Jose Altuve","Yordan Alvarez",
+        "Corey Seager","Rafael Devers","Manny Machado","Trea Turner","Pete Alonso",
+        "Vladimir Guerrero Jr.","Matt Olson","Luis Robert Jr.","Bobby Witt Jr.","Corbin Carroll"
+      ]
+    },
+    soccer: {
+      label: "Soccer Superstars",
+      items: [
+        "Lionel Messi","Cristiano Ronaldo","Kylian Mbappé","Erling Haaland","Neymar",
+        "Kevin De Bruyne","Mohamed Salah","Harry Kane","Vinícius Júnior","Robert Lewandowski",
+        "Jude Bellingham","Antoine Griezmann","Luka Modric","Virgil van Dijk","Sergio Ramos",
+        "Son Heung-min","Pedri","Bruno Fernandes","Bukayo Saka","Karim Benzema"
+      ]
+    },
+    clash: {
+      label: "Clash Royale Cards",
+      items: [
+        "Knight","Archers","Bomber","Giant","Mini P.E.K.K.A","Valkyrie","Musketeer","Wizard",
+        "Witch","Skeleton Army","Skeletons","Spear Goblins","Goblin Gang","Goblin Barrel",
+        "Hog Rider","Prince","Dark Prince","Baby Dragon","Inferno Dragon","Electro Dragon",
+        "Mega Minion","Minions","Minion Horde","Bats","Ice Spirit","Fire Spirits","Zap",
+        "Arrows","Fireball","Rocket","Lightning","Poison","The Log","Graveyard","Freeze",
+        "Rage","Heal Spirit","Clone","Barbarians","Elite Barbarians","Battle Ram",
+        "Royal Giant","Royal Hogs","Royal Recruits","Mortar","Cannon","Tesla",
+        "Bomb Tower","Inferno Tower","X-Bow","Goblin Hut","Barbarian Hut","Furnace",
+        "Tornado","Fisherman","Bandit","Ram Rider","Magic Archer","Electro Wizard",
+        "Sparky","P.E.K.K.A","Mega Knight","Lava Hound","Golem","Elixir Golem",
+        "Goblin Giant","Giant Skeleton","Balloon","Miner","Night Witch","Hunter",
+        "Zappies","Dart Goblin","Royal Ghost","Ice Wizard","Bowler","Executioner",
+        "Phoenix","Monk","Goblin Drill","Cannon Cart","Flying Machine","Heal Spirit",
+        "Skeleton King","Golden Knight","Archer Queen","Mighty Miner","Elixir Collector",
+        "Battle Healer","Electro Giant","Skeleton Dragons","Wall Breakers","Ice Golem",
+        "Dark Goblin","Magic Archer","Princess","Ice Wizard","Lumberjack","Tornado"
+      ]
+    },
+    pop: {
+      label: "Pop Stars",
+      items: [
+        "Taylor Swift","Drake","Billie Eilish","The Weeknd","Harry Styles",
+        "Ariana Grande","Dua Lipa","Post Malone","Olivia Rodrigo","Ed Sheeran",
+        "Bad Bunny","SZA","Doja Cat","Travis Scott","Bruno Mars",
+        "Kendrick Lamar","Justin Bieber","Rihanna","Nicki Minaj","J. Cole"
+      ]
+    },
+    actors: {
+      label: "Movie & TV Actors",
+      items: [
+        "Dwayne Johnson","Ryan Reynolds","Tom Holland","Robert Downey Jr.","Chris Hemsworth",
+        "Zendaya","Timothée Chalamet","Margot Robbie","Florence Pugh","Emma Stone",
+        "Leonardo DiCaprio","Jennifer Lawrence","Tom Cruise","Keanu Reeves","Pedro Pascal",
+        "Sydney Sweeney","Millie Bobby Brown","Paul Rudd","Idris Elba","Scarlett Johansson"
+      ]
+    },
+    random: {
+      label: "Random Things & Places",
+      items: [
+        "The Grand Canyon","Times Square","Disneyland","The Eiffel Tower","The Super Bowl",
+        "A bowling alley","A crowded nightclub","An empty movie theater","A haunted house","An airport security line",
+        "Pumpkin spice latte","Cold pizza","Microwave burrito","Frozen margarita","Massive cheeseburger",
+        "Electric scooter","Broken iPhone screen","Gaming chair","Trampoline park","Escape room",
+        "A casino blackjack table","Karaoke bar","College dorm room","Coffee shop","Gym locker room"
+      ]
+    }
+  };
+
+  // ---------- GAME STATE ----------
+  const screen = document.getElementById("screen");
+
+  const state = {
+    numPlayers: 4,
+    modeKey: "nfl",
+    currentPlayer: 1,
+    imposter: 1,
+    word: "",
+    lastWordByMode: {},   // modeKey -> last word used
+    lastImposter: null
+  };
+
+  function render(html) { screen.innerHTML = html; }
+
+  // ---------- HELPERS ----------
+  function pickWord(modeKey) {
+    const list = MODES[modeKey].items;
+    if (!list || list.length === 0) return "Error: empty list";
+
+    let word;
+    const last = state.lastWordByMode[modeKey] || null;
+
+    // avoid immediate repeat if possible
+    if (list.length === 1) {
+      word = list[0];
+    } else {
+      do {
+        word = list[Math.floor(Math.random() * list.length)];
+      } while (word === last);
+    }
+
+    state.lastWordByMode[modeKey] = word;
+    return word;
+  }
+
+  function pickImposter(numPlayers) {
+    if (numPlayers === 1) return 1;
+    let imp;
+    do {
+      imp = Math.floor(Math.random() * numPlayers) + 1;
+    } while (imp === state.lastImposter);
+    state.lastImposter = imp;
+    return imp;
+  }
+
+  // ---------- SCREENS ----------
+  function showHome() {
+    render(`
+      <h1>Imposter Party</h1>
+      <label for="players">Number of players (3–12)</label>
+      <input id="players" type="number" min="3" max="12" value="${state.numPlayers}" />
+
+      <label for="mode">Category</label>
+      <select id="mode">
+        ${Object.entries(MODES).map(([key, m]) =>
+          `<option value="${key}" ${key === state.modeKey ? "selected" : ""}>${m.label}</option>`
+        ).join("")}
+      </select>
+
+      <button id="startBtn">Start Game</button>
+      <p class="small">
+        Everyone except one player sees the same word.<br/>
+        One person only sees <strong>IMPOSTER</strong> – they must bluff their way through.
+      </p>
+    `);
+
+    document.getElementById("startBtn").onclick = () => {
+      const n = parseInt(document.getElementById("players").value, 10);
+      if (isNaN(n) || n < 3 || n > 12) {
+        alert("Please choose between 3 and 12 players.");
+        return;
+      }
+      state.numPlayers = n;
+      state.modeKey = document.getElementById("mode").value;
+      startRound();
+    };
+  }
+
+  function startRound() {
+    state.currentPlayer = 1;
+    state.imposter = pickImposter(state.numPlayers);
+    state.word = pickWord(state.modeKey);
+    showPassScreen();
+  }
+
+  function showPassScreen() {
+    render(`
+      <div class="center">
+        <span class="pill">${MODES[state.modeKey].label}</span>
+        <h2>Player ${state.currentPlayer}</h2>
+        <p>Pass the phone to <strong>Player ${state.currentPlayer}</strong>.<br/>
+        When they're ready, tap below to view their card.</p>
+        <button id="revealBtn">Reveal Card</button>
+        <p class="small">Make sure no one else is looking 👀</p>
+      </div>
+    `);
+
+    document.getElementById("revealBtn").onclick = showCardScreen;
+  }
+
+  function showCardScreen() {
+    const isImp = (state.currentPlayer === state.imposter);
+    const title = isImp ? "You are the IMPOSTER" : "You know the word";
+    const text = isImp ? "IMPOSTER" : state.word;
+    const instructions = isImp
+      ? "You do NOT know the real word. Listen carefully and copy the vibe of everyone else."
+      : "Give short clues without saying the exact name, team, number, or any super obvious giveaway.";
+
+    render(`
+      <div class="center">
+        <span class="pill">${title}</span>
+        <h2>Your Card</h2>
+        <div class="big-word ${isImp ? "imposter" : "word"}">${text}</div>
+        <p class="small">${instructions}</p>
+        <button id="hideBtn">Hide Card &amp; Pass Phone</button>
+      </div>
+    `);
+
+    document.getElementById("hideBtn").onclick = () => {
+      if (state.currentPlayer < state.numPlayers) {
+        state.currentPlayer++;
+        showPassScreen();
+      } else {
+        showDiscussionScreen();
+      }
+    };
+  }
+
+  function showDiscussionScreen() {
+    render(`
+      <div class="center">
+        <span class="pill">Discussion</span>
+        <h2>Talk &amp; Vote</h2>
+        <p class="small">
+          One by one, each player gives a short clue.<br/>
+          Ask questions, debate, then vote on who you think the imposter is.
+        </p>
+        <button id="revealRoundBtn">Reveal Imposter</button>
+      </div>
+    `);
+
+    document.getElementById("revealRoundBtn").onclick = showResultsScreen;
+  }
+
+  function showResultsScreen() {
+    render(`
+      <div class="center">
+        <span class="pill">Round Results</span>
+        <h2>Reveal</h2>
+        <p>The secret word was:</p>
+        <div class="big-word word">${state.word}</div>
+        <p class="small">The imposter was <strong>Player ${state.imposter}</strong>.</p>
+
+        <div class="row">
+          <button id="anotherBtn">Play Another Round</button>
+          <button class="secondary" id="homeBtn">New Game / Change Category</button>
+        </div>
+      </div>
+    `);
+
+    document.getElementById("anotherBtn").onclick = startRound;
+    document.getElementById("homeBtn").onclick = showHome;
+  }
+
+  // initial screen
+  showHome();
+</script>
+</body>
+</html>
